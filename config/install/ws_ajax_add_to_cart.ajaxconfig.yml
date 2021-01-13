@@ -1,0 +1,4 @@
+cart_block_id: cart_block_example
+cart_block_selector: '.block-commerce-cart'
+modal_mode: 0
+time_ajax_modal: 0

@@ -1,0 +1,120 @@
+<?php
+
+/**
+ * @file
+ * Contains ws_ajax_add_to_cart.module.
+ */
+
+use Drupal\commerce_cart\Form\AddToCartFormInterface;
+use Drupal\Core\Ajax\AjaxResponse;
+use Drupal\Core\Ajax\ReplaceCommand;
+use Drupal\ws_ajax_add_to_cart\Ajax\AlertCommand;
+use Drupal\ws_ajax_add_to_cart\Ajax\FancyBoxCommand;
+use Drupal\ws_ajax_add_to_cart\Ajax\ActiveModeCommand;
+use Drupal\Core\Routing\RouteMatchInterface;
+
+/**
+ * Implements hook_help().
+ */
+function ws_ajax_add_to_cart_help($route_name, RouteMatchInterface $route_match) {
+  switch ($route_name) {
+    // Main module help for the ws_ajax_add_to_cart module.
+    case 'help.page.ws_ajax_add_to_cart':
+      $output = '';
+      $output .= '<h3>' . t('Информация') . '</h3>';
+      $output .= '<p>' . t('AJAX уведомление о добавление товара в корзину.') . '</p>';
+      return $output;
+
+    default:
+  }
+}
+
+/**
+ * Define changes for standard forms.
+ */
+function ws_ajax_add_to_cart_form_alter(&$form, &$form_state, $form_id) {
+  // Check if the form builder implements the AddToCartFormInterface.
+  if ($form_state->getBuildInfo()['callback_object'] instanceof AddToCartFormInterface) {
+
+    $config = Drupal::getContainer()->get('config.factory')->get('ws_ajax_add_to_cart.ajaxconfig');
+
+    $form['#prefix'] = '<div id="modal_ajax_form_' . $form_id . '">';
+    $form['#suffix'] = '</div>';
+    $form['form_id'] = [
+      '#type' => 'hidden',
+      '#value' => $form_id,
+    ];
+
+    // Вешаем ajax обработчик
+    $form['actions']['submit']['#attributes']['class'][] = 'use-ajax';
+    $form['actions']['submit']['#ajax'] = [
+      'callback' => 'ws_ajax_add_to_cart_ajax_validate',
+      'disable-refocus' => TRUE,
+      'event' => 'click',
+      'progress' => [
+        'type' => 'throbber',
+        'message' => t('Добавление в корзину ...'),
+      ],
+    ];
+    // Добавляем необходимые библиотеки
+    $form['#attached']['library'][] = 'ws_ajax_add_to_cart/ws_ajax_add_to_cart.commands';
+
+    // Переменные для fancybox и active mode
+    if ($config->get('modal_mode') > 0) {
+      $form['#attached']['drupalSettings']['ws_ajax_add_to_cart']['selector'] = $config->get('selector');
+      $form['#attached']['drupalSettings']['ws_ajax_add_to_cart']['time'] = $config->get('time_ajax_modal');
+
+    // Переменные для alert
+    } else
+      $form['#attached']['drupalSettings']['ws_ajax_add_to_cart']['alert_message'] = t("Товар добавлен в корзину");
+
+  }
+}
+
+/**
+ * Обработчик ajax
+ */
+function ws_ajax_add_to_cart_ajax_validate(&$form, $form_state) {
+  $response = new AjaxResponse();
+  $form_id = $form_state->getUserInput()['form_id'];
+  if ($form_state->hasAnyErrors()) {
+    // Если форма содержит ошибки, перезагрузить форму
+    $response->addCommand(new ReplaceCommand('#modal_ajax_form_' . $form_id, $form));
+  } else {
+
+    // Получить конфигурацию
+    $config = Drupal::getContainer()->get('config.factory')->get('ws_ajax_add_to_cart.ajaxconfig');
+
+    // Перезагрузить корзину
+    $block  = \Drupal::service('plugin.manager.block')->createInstance($config->get("cart_block_id"), []);
+    $render = $block->build();
+    if (empty($render)) {
+      $customblock = $this->container->get('plugin.manager.block')->createInstance('commerce_cart', []);
+      $render = $customblock->build();
+    }
+    $block_rendered = \Drupal::service('renderer')->render($render);
+
+    $response->addCommand(new ReplaceCommand($config->get("cart_block_selector"), $block_rendered));
+
+    // Всплывающее окно
+    $mode = $config->get('modal_mode');
+    if ($mode == 1)
+      $response->addCommand(new FancyBoxCommand());
+    elseif ($mode == 2)
+      $response->addCommand(new ActiveModeCommand());
+    else
+      $response->addCommand(new AlertCommand());
+    return $response;
+  }
+  return $response;
+}
+
+/**
+ * Implements hook_preprocess_block().
+ */
+function ws_ajax_add_to_cart_preprocess_block(&$vars) {
+  if ($vars['base_plugin_id'] == 'commerce_cart') {
+    // Add a class to the cart block so that we can replace it using Ajax.
+    $vars['attributes']['class'][] = 'block-commerce-cart';
+  }
+}

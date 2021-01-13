@@ -1,0 +1,6 @@
+ws_ajax_add_to_cart.ajax_config_form:
+  title: 'Настройка окна добавления в корзину'
+  route_name: ws_ajax_add_to_cart.ajax_config_form
+  description: 'Настройка окна добавления в корзину'
+  parent: 'commerce_order.configuration'
+  weight: 99

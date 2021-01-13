@@ -1,0 +1,7 @@
+ws_ajax_add_to_cart.commands:
+  version: 1
+  js:
+    js/commands.js: {}
+  dependencies:
+    - core/drupal.ajax
+    - core/drupal.dialog.ajax

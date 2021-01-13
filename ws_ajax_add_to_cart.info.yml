@@ -1,0 +1,9 @@
+name: 'AJAX окно добавления в корзину'
+type: module
+description: 'AJAX уведомление о добавления товара в корзину.'
+package: Commerce
+dependencies:
+  - drupal:commerce
+  - drupal:commerce_cart
+core: 8.x
+datestamp: 1494330492
