@@ -6,4 +6,5 @@ dependencies:
   - drupal:commerce
   - drupal:commerce_cart
 core: 8.x
-datestamp: 1494330492
+core_version_requirement: ^8 || ^9
+configure: ws_ajax_add_to_cart.ajax_config_form

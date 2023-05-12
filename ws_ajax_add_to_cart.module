@@ -86,10 +86,11 @@ function ws_ajax_add_to_cart_ajax_validate(&$form, $form_state) {
     $config = Drupal::getContainer()->get('config.factory')->get('ws_ajax_add_to_cart.ajaxconfig');
 
     // Перезагрузить корзину
-    $block  = \Drupal::service('plugin.manager.block')->createInstance($config->get("cart_block_id"), []);
+    $manager = \Drupal::service('plugin.manager.block');
+    $block  = $manager->createInstance($config->get("cart_block_id"), []);
     $render = $block->build();
     if (empty($render)) {
-      $customblock = $this->container->get('plugin.manager.block')->createInstance('commerce_cart', []);
+      $customblock = $manager->createInstance('commerce_cart', []);
       $render = $customblock->build();
     }
     $block_rendered = \Drupal::service('renderer')->render($render);
