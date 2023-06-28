@@ -1,6 +1,6 @@
 services:
   commerce_cart.cart_subscriber:
     class: Drupal\ws_ajax_add_to_cart\EventSubscriber\CartEventSubscriber
-    arguments: ['@messenger', '@string_translation', '@request_stack']
+    arguments: ['@messenger', '@string_translation', '@entity_type.manager']
     tags:
       - { name: event_subscriber }
